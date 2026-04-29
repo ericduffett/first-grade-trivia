@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Quiz Time!</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --yellow: #FFD93D;
+    --yellow-dark: #E6A817;
+    --coral: #FF6B6B;
+    --coral-dark: #C94040;
+    --teal: #4ECDC4;
+    --teal-dark: #2A9E96;
+    --purple: #A78BFA;
+    --purple-dark: #7C3AED;
+    --green: #6BCB77;
+    --green-dark: #3A9A44;
+    --bg: #FFF9F0;
+    --card: #FFFFFF;
+    --text-dark: #1A1A2E;
+    --text-mid: #4A4A6A;
+    --shadow: 0 8px 32px rgba(0,0,0,0.12);
+    --shadow-lg: 0 16px 48px rgba(0,0,0,0.18);
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    font-family: 'Nunito Sans', sans-serif;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(255,217,61,0.18) 0%, transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(78,205,196,0.18) 0%, transparent 40%),
+      radial-gradient(circle at 50% 50%, rgba(167,139,250,0.08) 0%, transparent 60%);
+  }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .header h1 {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 900;
+    font-size: 42px;
+    color: var(--text-dark);
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+  .header h1 span { color: var(--coral); }
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    justify-content: center;
+  }
+  .progress-bar-wrap {
+    flex: 1;
+    max-width: 320px;
+    height: 10px;
+    background: rgba(0,0,0,0.08);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--coral), var(--yellow));
+    border-radius: 99px;
+    transition: width 0.4s cubic-bezier(.4,0,.2,1);
+  }
+  .progress-label {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--text-mid);
+    min-width: 60px;
+    text-align: right;
+  }
+
+  /* ── Subject badge ── */
+  .subject-badge {
+    display: inline-block;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 99px;
+    margin-bottom: 18px;
+  }
+  .badge-Math     { background: rgba(255,217,61,0.25); color: #8a6000; }
+  .badge-Science  { background: rgba(78,205,196,0.25); color: #0a6b65; }
+  .badge-Social   { background: rgba(167,139,250,0.25); color: #4c1d95; }
+  .badge-Trivia   { background: rgba(107,203,119,0.25); color: #1a5e24; }
+
+  /* ── Card ── */
+  .card-wrap {
+    width: 100%;
+    max-width: 680px;
+    perspective: 1200px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 28px;
+    box-shadow: var(--shadow-lg);
+    padding: 52px 52px 44px;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .card:active { transform: scale(0.985); }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    border-radius: 28px 28px 0 0;
+  }
+  .card.Math::before     { background: var(--yellow); }
+  .card.Science::before  { background: var(--teal); }
+  .card.Social::before   { background: var(--purple); }
+  .card.Trivia::before   { background: var(--green); }
+
+  .question-text {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 32px;
+    color: var(--text-dark);
+    line-height: 1.3;
+    margin-bottom: 0;
+    transition: opacity 0.2s;
+  }
+
+  .answer-reveal {
+    margin-top: 28px;
+    width: 100%;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    pointer-events: none;
+  }
+  .answer-reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .answer-divider {
+    width: 48px;
+    height: 3px;
+    border-radius: 99px;
+    margin: 0 auto 16px;
+  }
+  .Math .answer-divider     { background: var(--yellow-dark); }
+  .Science .answer-divider  { background: var(--teal-dark); }
+  .Social .answer-divider   { background: var(--purple-dark); }
+  .Trivia .answer-divider   { background: var(--green-dark); }
+
+  .answer-text {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 900;
+    font-size: 28px;
+    line-height: 1.3;
+  }
+  .Math .answer-text     { color: var(--yellow-dark); }
+  .Science .answer-text  { color: var(--teal-dark); }
+  .Social .answer-text   { color: var(--purple-dark); }
+  .Trivia .answer-text   { color: var(--green-dark); }
+
+  /* ── Tap hint ── */
+  .tap-hint {
+    margin-top: 18px;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(74,74,106,0.5);
+    letter-spacing: 0.03em;
+    transition: opacity 0.3s;
+  }
+  .tap-hint.hidden { opacity: 0; }
+
+  /* ── Bottom buttons ── */
+  .btn-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 28px;
+    width: 100%;
+    max-width: 680px;
+  }
+  .btn {
+    flex: 1;
+    padding: 20px;
+    border: none;
+    border-radius: 18px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-prev {
+    background: #EDEDED;
+    color: var(--text-mid);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    flex: 0 0 auto;
+    padding: 20px 28px;
+  }
+  .btn-next {
+    background: var(--coral);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(255,107,107,0.4);
+  }
+  .btn-next:active { box-shadow: 0 2px 8px rgba(255,107,107,0.3); }
+
+  /* ── Completion screen ── */
+  .complete-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    max-width: 520px;
+  }
+  .complete-screen.visible { display: flex; }
+  .complete-emoji {
+    font-size: 80px;
+    margin-bottom: 20px;
+    animation: bounce 0.6s ease forwards;
+  }
+  @keyframes bounce {
+    0%   { transform: scale(0.5); opacity: 0; }
+    70%  { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .complete-title {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 900;
+    font-size: 44px;
+    color: var(--text-dark);
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  .complete-sub {
+    font-size: 18px;
+    color: var(--text-mid);
+    font-weight: 600;
+    margin-bottom: 32px;
+  }
+  .btn-restart {
+    background: var(--coral);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(255,107,107,0.4);
+    padding: 20px 48px;
+    border: none;
+    border-radius: 18px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    cursor: pointer;
+    transition: transform 0.12s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-restart:active { transform: scale(0.96); }
+
+  /* ── Slide animation ── */
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-40px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .slide-in      { animation: slideIn 0.3s cubic-bezier(.4,0,.2,1) forwards; }
+  .slide-in-left { animation: slideInLeft 0.3s cubic-bezier(.4,0,.2,1) forwards; }
+
+  /* ── iPad tweaks ── */
+  @media (max-width: 600px) {
+    .header h1 { font-size: 32px; }
+    .card { padding: 40px 28px 36px; min-height: 260px; }
+    .question-text { font-size: 26px; }
+    .answer-text { font-size: 22px; }
+    .btn { font-size: 16px; padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="main">
+  <div class="header">
+    <h1>Quiz <span>Time!</span></h1>
+    <div class="progress-row">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressFill" style="width:1%"></div>
+      </div>
+      <div class="progress-label" id="progressLabel">1 / 100</div>
+    </div>
+  </div>
+
+  <div class="card-wrap">
+    <div class="subject-badge" id="badge"></div>
+    <div class="card" id="card" onclick="revealAnswer()">
+      <div class="question-text" id="questionText"></div>
+      <div class="answer-reveal" id="answerReveal">
+        <div class="answer-divider"></div>
+        <div class="answer-text" id="answerText"></div>
+      </div>
+    </div>
+    <div class="tap-hint" id="tapHint">Tap card to reveal answer</div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-prev" id="prevBtn" onclick="navigate(-1)">&#8592;</button>
+    <button class="btn btn-next" id="nextBtn" onclick="navigate(1)">Next question &#8594;</button>
+  </div>
+</div>
+
+<div class="complete-screen" id="completeScreen">
+  <div class="complete-emoji">&#127881;</div>
+  <div class="complete-title">All done!</div>
+  <div class="complete-sub">You made it through all 100 questions!</div>
+  <button class="btn-restart" onclick="restart()">Play again &#8617;</button>
+</div>
+
+<script>
+const ALL_QUESTIONS = [
+  {s:"Math",q:"What is 2 + 2?",a:"4"},
+  {s:"Math",q:"How many fingers do you have on one hand?",a:"5"},
+  {s:"Math",q:"What comes after the number 9?",a:"10"},
+  {s:"Math",q:"What is 5 + 3?",a:"8"},
+  {s:"Math",q:"How many sides does a triangle have?",a:"3"},
+  {s:"Math",q:"What is 10 – 4?",a:"6"},
+  {s:"Math",q:"If you have 3 apples and get 2 more, how many do you have?",a:"5"},
+  {s:"Math",q:"What number comes between 6 and 8?",a:"7"},
+  {s:"Math",q:"How many sides does a square have?",a:"4"},
+  {s:"Math",q:"What is 1 + 1?",a:"2"},
+  {s:"Math",q:"What is 4 + 4?",a:"8"},
+  {s:"Math",q:"How many wheels does a tricycle have?",a:"3"},
+  {s:"Math",q:"What is 7 – 3?",a:"4"},
+  {s:"Math",q:"What shape looks like a ball?",a:"Sphere"},
+  {s:"Math",q:"If you have 10 crayons and give away 5, how many are left?",a:"5"},
+  {s:"Math",q:"What is 3 + 5?",a:"8"},
+  {s:"Math",q:"How many cents are in a nickel?",a:"5"},
+  {s:"Math",q:"What is 6 + 2?",a:"8"},
+  {s:"Math",q:"Which number is bigger: 7 or 4?",a:"7"},
+  {s:"Math",q:"What is 9 – 1?",a:"8"},
+  {s:"Math",q:"How many days are in a week?",a:"7"},
+  {s:"Math",q:"What is 5 + 5?",a:"10"},
+  {s:"Math",q:"What comes before 15?",a:"14"},
+  {s:"Math",q:"If you split 6 cookies equally between 2 people, how many does each get?",a:"3"},
+  {s:"Math",q:"How many months are in a year?",a:"12"},
+  {s:"Science",q:"What do plants need to grow?",a:"Sun, water, and soil"},
+  {s:"Science",q:"What animal makes honey?",a:"Bee"},
+  {s:"Science",q:"What is the closest star to Earth?",a:"The Sun"},
+  {s:"Science",q:"What do caterpillars turn into?",a:"Butterflies"},
+  {s:"Science",q:"How many legs does a spider have?",a:"8"},
+  {s:"Science",q:"What do tadpoles turn into when they grow up?",a:"Frogs"},
+  {s:"Science",q:"What falls from the sky when it snows?",a:"Snowflakes"},
+  {s:"Science",q:"Name an animal that lives in the ocean.",a:"Any ocean animal (e.g. fish, whale)"},
+  {s:"Science",q:"What do we call frozen water?",a:"Ice"},
+  {s:"Science",q:"What part of a plant is underground?",a:"Roots"},
+  {s:"Science",q:"Which season comes after summer?",a:"Fall / Autumn"},
+  {s:"Science",q:"What do dogs and cats have that birds don't?",a:"Fur"},
+  {s:"Science",q:"What is the sky usually like on a sunny day?",a:"Blue and clear"},
+  {s:"Science",q:"What do bears do during winter?",a:"Hibernate"},
+  {s:"Science",q:"What is a baby frog called?",a:"Tadpole"},
+  {s:"Science",q:"How many legs does an insect have?",a:"6"},
+  {s:"Science",q:"What type of weather makes a rainbow?",a:"Sun and rain"},
+  {s:"Science",q:"What do cows give us to drink?",a:"Milk"},
+  {s:"Science",q:"Name something that floats in water.",a:"Any valid answer (e.g. leaf, boat)"},
+  {s:"Science",q:"What do you call the loud boom during a storm?",a:"Thunder"},
+  {s:"Science",q:"What do birds use to fly?",a:"Wings"},
+  {s:"Science",q:"Where do fish live?",a:"Water"},
+  {s:"Science",q:"What gives plants their green color?",a:"Chlorophyll"},
+  {s:"Science",q:"What comes out of a volcano?",a:"Lava"},
+  {s:"Science",q:"Which animal is the largest land animal?",a:"Elephant"},
+  {s:"Social",q:"What country do we live in?",a:"United States"},
+  {s:"Social",q:"What is the name of our planet?",a:"Earth"},
+  {s:"Social",q:"Who is the leader of the United States?",a:"The President"},
+  {s:"Social",q:"What do we call the place where the President lives and works?",a:"The White House"},
+  {s:"Social",q:"What are the colors of the American flag?",a:"Red, white, and blue"},
+  {s:"Social",q:"How many stripes does the American flag have?",a:"13"},
+  {s:"Social",q:"What holiday do we celebrate on July 4th?",a:"Independence Day"},
+  {s:"Social",q:"What is a map used for?",a:"To show where places are"},
+  {s:"Social",q:"What do we call the people who put out fires?",a:"Firefighters"},
+  {s:"Social",q:"Name one thing a police officer does.",a:"Keeps people safe"},
+  {s:"Social",q:"What is a doctor's job?",a:"To help sick people get better"},
+  {s:"Social",q:"What do you call a person who teaches you at school?",a:"Teacher"},
+  {s:"Social",q:"What is a community?",a:"A group of people who live in the same area"},
+  {s:"Social",q:"What holiday is about being thankful and eating turkey?",a:"Thanksgiving"},
+  {s:"Social",q:"What season has the most snow?",a:"Winter"},
+  {s:"Social",q:"What building lets you borrow books for free?",a:"Library"},
+  {s:"Social",q:"What does a mayor do?",a:"Leads a city"},
+  {s:"Social",q:"What continent is the United States on?",a:"North America"},
+  {s:"Social",q:"What holiday do we celebrate in fall by dressing in costumes?",a:"Halloween"},
+  {s:"Social",q:"What do you call the day you were born, every year?",a:"Birthday"},
+  {s:"Social",q:"What do you do at a crosswalk before crossing the street?",a:"Look both ways"},
+  {s:"Social",q:"Name one national holiday in the United States.",a:"Any valid holiday"},
+  {s:"Social",q:"What is a vote?",a:"A way to make a choice"},
+  {s:"Social",q:"What is the job of a nurse?",a:"To care for sick people"},
+  {s:"Trivia",q:"What color do you get when you mix red and yellow?",a:"Orange"},
+  {s:"Trivia",q:"What do you call a baby dog?",a:"Puppy"},
+  {s:"Trivia",q:"How many colors are in a rainbow?",a:"7"},
+  {s:"Trivia",q:"What sound does a cow make?",a:"Moo"},
+  {s:"Trivia",q:"What do you call a baby cat?",a:"Kitten"},
+  {s:"Trivia",q:"What planet has rings around it?",a:"Saturn"},
+  {s:"Trivia",q:"What meal do most people eat in the morning?",a:"Breakfast"},
+  {s:"Trivia",q:"What is the color of grass?",a:"Green"},
+  {s:"Trivia",q:"What do you use to write on a chalkboard?",a:"Chalk"},
+  {s:"Trivia",q:"What do you call someone who writes and draws stories in kids' books?",a:"Author / Illustrator"},
+  {s:"Trivia",q:"What do you call the person who flies an airplane?",a:"Pilot"},
+  {s:"Trivia",q:"What is the fastest land animal?",a:"Cheetah"},
+  {s:"Trivia",q:"How many days are in a year?",a:"365"},
+  {s:"Trivia",q:"What ocean is on the east coast of the United States?",a:"Atlantic Ocean"},
+  {s:"Trivia",q:"What do caterpillars spin around themselves before becoming butterflies?",a:"A cocoon"},
+  {s:"Trivia",q:"What do you call a person who visits outer space?",a:"Astronaut"},
+  {s:"Trivia",q:"What color do you get when you mix blue and yellow?",a:"Green"},
+  {s:"Trivia",q:"What holiday involves looking for eggs?",a:"Easter"},
+  {s:"Trivia",q:"What musical instrument has black and white keys?",a:"Piano"},
+  {s:"Trivia",q:"What do you call a person who fixes teeth?",a:"Dentist"},
+  {s:"Trivia",q:"What is the tallest animal in the world?",a:"Giraffe"},
+  {s:"Trivia",q:"What do you find at the end of a rainbow in fairy tales?",a:"A pot of gold"},
+  {s:"Trivia",q:"What vehicle travels underwater?",a:"Submarine"},
+  {s:"Trivia",q:"How many letters are in the alphabet?",a:"26"},
+  {s:"Trivia",q:"What do you call a place where animals are kept for people to visit?",a:"Zoo"},
+];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+let questions = shuffle(ALL_QUESTIONS);
+let current = 0;
+let revealed = false;
+let animDir = 'right';
+
+function showQuestion(dir) {
+  const q = questions[current];
+  const card = document.getElementById('card');
+  const badge = document.getElementById('badge');
+  const qt = document.getElementById('questionText');
+  const at = document.getElementById('answerText');
+  const ar = document.getElementById('answerReveal');
+  const hint = document.getElementById('tapHint');
+
+  revealed = false;
+  ar.classList.remove('visible');
+  hint.classList.remove('hidden');
+
+  card.className = 'card ' + q.s;
+  card.classList.add(dir === 'right' ? 'slide-in' : 'slide-in-left');
+  card.addEventListener('animationend', () => {
+    card.classList.remove('slide-in', 'slide-in-left');
+  }, { once: true });
+
+  badge.className = 'subject-badge badge-' + q.s;
+  badge.textContent = q.s === 'Social' ? 'Social Studies' : q.s === 'Trivia' ? 'Fun Trivia' : q.s;
+
+  qt.textContent = q.q;
+  at.textContent = q.a;
+
+  const pct = Math.round(((current + 1) / questions.length) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = (current + 1) + ' / ' + questions.length;
+
+  document.getElementById('prevBtn').style.opacity = current === 0 ? '0.3' : '1';
+  document.getElementById('prevBtn').disabled = current === 0;
+}
+
+function revealAnswer() {
+  if (revealed) return;
+  revealed = true;
+  document.getElementById('answerReveal').classList.add('visible');
+  document.getElementById('tapHint').classList.add('hidden');
+}
+
+function navigate(dir) {
+  animDir = dir === 1 ? 'right' : 'left';
+  if (dir === 1) {
+    if (current >= questions.length - 1) {
+      showComplete();
+      return;
+    }
+    current++;
+  } else {
+    if (current <= 0) return;
+    current--;
+  }
+  showQuestion(animDir);
+}
+
+function showComplete() {
+  document.getElementById('main').style.display = 'none';
+  const cs = document.getElementById('completeScreen');
+  cs.classList.add('visible');
+}
+
+function restart() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  document.getElementById('completeScreen').classList.remove('visible');
+  document.getElementById('main').style.display = '';
+  showQuestion('right');
+}
+
+showQuestion('right');
+</script>
+</body>
+</html>
